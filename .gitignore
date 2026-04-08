@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# Docker
+*.log
+docker-compose.override.yml
+!docker-compose.yml
+
+# Логи и данные
+logs/
+*.db
+*.json
+!requirements.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Система
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+
+# Env files (секреты)
+.env
+*.env.local
+
+# Docker build cache
+.docker/
