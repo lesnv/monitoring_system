@@ -39,3 +39,24 @@ Thumbs.db
 
 # Docker build cache
 .docker/
+
+# Проектные файлы
+postgres_data/
+*.jpg
+*.png
+uploads/
+camera_analysis/
+mqtt/
+clo-linux-amd64
+*.service
+*.sh
+=*.0
+CACHED
+[internal]
+exporting
+naming
+reading
+resolve
+resolving
+transferring
+unpacking
