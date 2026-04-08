@@ -135,46 +135,93 @@ async def get_history():
 @app.get("/")
 async def mon_dash():
     return HTMLResponse(content="""<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>🖥️ Server Monitor</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);padding:15px;color:#333}.container{max-width:1400px;margin:0 auto}.header{background:rgba(255,255,255,0.95);padding:15px 20px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}.header h1{color:#667eea;font-size:1.5em}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:15px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:15px}.card{background:white;padding:20px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}.card h3{color:#667eea;margin:0 0 12px;font-size:1.2em;border-bottom:2px solid #f0f0f0;padding-bottom:10px}.links{display:flex;gap:10px;margin:10px 0}.link-btn{flex:1;padding:8px 12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;border-radius:6px;font-size:0.9em;text-align:center;transition:opacity 0.2s}.link-btn:hover{opacity:0.9}.stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95em}.stat:last-child{border-bottom:none}.stat-l{color:#666}.stat-v{font-weight:600}.progress{background:#e0e0e0;border-radius:6px;height:8px;margin:8px 0;overflow:hidden}.progress-bar{height:100%;background:#667eea;border-radius:6px;transition:width 0.3s}.progress-bar.high{background:#f5576c}.progress-bar.medium{background:#4facfe}.chart-container{position:relative;height:250px;margin-top:15px}.net-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.net-c{background:#f5f7fa;padding:12px;border-radius:6px;border-left:4px solid #667eea}.net-c strong{display:block;color:#667eea;margin-bottom:8px;font-size:1.1em}.detail{font-size:0.9em;color:#666;margin-top:3px}@media(max-width:1024px){.grid-3{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}@media(max-width:768px){.header{flex-direction:column;gap:10px;text-align:center}.links{flex-direction:column}}
-</style></head><body><div class="container"><div class="header"><h1>🖥️ Server Monitor</h1><span id="ts" style="font-size:0.9em;color:#666"></span></div><div class="grid"><div class="card" style="grid-column:1/-1"><h3>💻 Система</h3><div class="links"><a href="https://processes.cloudpub.ru/" class="link-btn">📊 Процессы</a><a href="https://network.cloudpub.ru/" class="link-btn">🌐 Сеть</a></div><div class="stat"><span class="stat-l">Хост:</span><span class="stat-v" id="hn">—</span></div><div class="stat"><span class="stat-l">Загрузка:</span><span class="stat-v" id="bt">—</span></div><div class="stat"><span class="stat-l">Uptime:</span><span class="stat-v" id="up">—</span></div><div class="stat"><span class="stat-l">WAN:</span><span class="stat-v" id="wan">—</span></div></div></div><div class="grid-3"><div class="card"><h3>🔥 CPU</h3><div class="stat"><span class="stat-l">Загрузка:</span><span class="stat-v" id="cu">—</span></div><div class="progress"><div id="cb" class="progress-bar" style="width:0%"></div></div><div class="chart-container"><canvas id="cpuChart"></canvas></div><div class="stat"><span class="stat-l">Температура:</span><span class="stat-v" id="ct">—</span></div><div class="chart-container"><canvas id="tempChart"></canvas></div></div><div class="card"><h3>💾 RAM</h3><div class="stat"><span class="stat-l">Использовано:</span><span class="stat-v" id="ru">—</span></div><div class="progress"><div id="rb" class="progress-bar" style="width:0%"></div></div><div class="detail" id="rd">—</div><div class="chart-container"><canvas id="ramChart"></canvas></div></div><div class="card"><h3>💿 Диски</h3><div class="stat"><span class="stat-l">Система:</span><span class="stat-v" id="ds">—</span></div><div class="progress"><div id="db" class="progress-bar" style="width:0%"></div></div><div class="detail" id="dd">—</div><div class="stat"><span class="stat-l">Внешний:</span><span class="stat-v" id="de">—</span></div><div class="progress"><div id="deb" class="progress-bar" style="width:0%"></div></div><div class="detail" id="ded">—</div><div class="chart-container"><canvas id="diskChart"></canvas></div></div></div><div class="grid"><div class="card" style="grid-column:1/-1"><h3>🌐 Сеть</h3><div class="net-grid"><div class="net-c"><strong>LAN 1</strong><div class="stat"><span class="stat-l">IP:</span><span class="stat-v" id="l1i">—</span></div><div class="stat"><span class="stat-l">RX:</span><span class="stat-v" id="l1r">—</span></div><div class="stat"><span class="stat-l">TX:</span><span class="stat-v" id="l1t">—</span></div></div><div class="net-c"><strong>LAN 2</strong><div class="stat"><span class="stat-l">IP:</span><span class="stat-v" id="l2i">—</span></div><div class="stat"><span class="stat-l">RX:</span><span class="stat-v" id="l2r">—</span></div><div class="stat"><span class="stat-l">TX:</span><span class="stat-v" id="l2t">—</span></div></div></div></div></div></div><script>
-let cpuChart,tempChart,ramChart,diskChart,historyLoaded=false;
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);padding:15px;color:#333}.container{max-width:1400px;margin:0 auto}.header{background:rgba(255,255,255,0.95);padding:15px 20px;border-radius:12px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center}.header h1{color:#667eea;font-size:1.5em}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:15px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:15px}.card{background:white;padding:20px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}.card h3{color:#667eea;margin:0 0 12px;font-size:1.2em;border-bottom:2px solid #f0f0f0;padding-bottom:10px}.links{display:flex;gap:10px;margin:10px 0}.link-btn{flex:1;padding:8px 12px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-decoration:none;border-radius:6px;font-size:0.9em;text-align:center;transition:opacity 0.2s}.link-btn:hover{opacity:0.9}.stat{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:0.95em}.stat:last-child{border-bottom:none}.stat-l{color:#666}.stat-v{font-weight:600}.progress{background:#e0e0e0;border-radius:6px;height:8px;margin:8px 0;overflow:hidden}.progress-bar{height:100%;background:#667eea;border-radius:6px;transition:width 0.3s}.progress-bar.high{background:#f5576c}.progress-bar.medium{background:#4facfe}.chart-container{position:relative;height:300px;margin-top:15px}.net-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.net-c{background:#f5f7fa;padding:12px;border-radius:6px;border-left:4px solid #667eea}.net-c strong{display:block;color:#667eea;margin-bottom:8px;font-size:1.1em}.detail{font-size:0.9em;color:#666;margin-top:3px}@media(max-width:1024px){.grid-3{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}@media(max-width:768px){.header{flex-direction:column;gap:10px;text-align:center}.links{flex-direction:column}}
+</style></head><body><div class="container"><div class="header"><h1>🖥️ Server Monitor</h1><span id="ts" style="font-size:0.9em;color:#666"></span></div><div class="grid"><div class="card" style="grid-column:1/-1"><h3>💻 Система</h3><div class="links"><a href="https://processes.cloudpub.ru/" class="link-btn">📊 Процессы</a><a href="https://network.cloudpub.ru/" class="link-btn">🌐 Сеть</a></div><div class="stat"><span class="stat-l">Хост:</span><span class="stat-v" id="hn">—</span></div><div class="stat"><span class="stat-l">Загрузка:</span><span class="stat-v" id="bt">—</span></div><div class="stat"><span class="stat-l">Uptime:</span><span class="stat-v" id="up">—</span></div><div class="stat"><span class="stat-l">WAN:</span><span class="stat-v" id="wan">—</span></div></div></div><div class="grid-3"><div class="card"><h3>🔥 CPU</h3><div class="stat"><span class="stat-l">Загрузка:</span><span class="stat-v" id="cu">—</span></div><div class="progress"><div id="cb" class="progress-bar" style="width:0%"></div></div><div class="chart-container" id="cpuChart"></div><div class="stat"><span class="stat-l">Температура:</span><span class="stat-v" id="ct">—</span></div><div class="chart-container" id="tempChart"></div></div><div class="card"><h3>💾 RAM</h3><div class="stat"><span class="stat-l">Использовано:</span><span class="stat-v" id="ru">—</span></div><div class="progress"><div id="rb" class="progress-bar" style="width:0%"></div></div><div class="detail" id="rd">—</div><div class="chart-container" id="ramChart"></div></div><div class="card"><h3>💿 Диски</h3><div class="stat"><span class="stat-l">Система:</span><span class="stat-v" id="ds">—</span></div><div class="progress"><div id="db" class="progress-bar" style="width:0%"></div></div><div class="detail" id="dd">—</div><div class="stat"><span class="stat-l">Внешний:</span><span class="stat-v" id="de">—</span></div><div class="progress"><div id="deb" class="progress-bar" style="width:0%"></div></div><div class="detail" id="ded">—</div><div class="chart-container" id="diskChart"></div></div></div><div class="grid"><div class="card" style="grid-column:1/-1"><h3>🌐 Сеть</h3><div class="net-grid"><div class="net-c"><strong>LAN 1</strong><div class="stat"><span class="stat-l">IP:</span><span class="stat-v" id="l1i">—</span></div><div class="stat"><span class="stat-l">RX:</span><span class="stat-v" id="l1r">—</span></div><div class="stat"><span class="stat-l">TX:</span><span class="stat-v" id="l1t">—</span></div></div><div class="net-c"><strong>LAN 2</strong><div class="stat"><span class="stat-l">IP:</span><span class="stat-v" id="l2i">—</span></div><div class="stat"><span class="stat-l">RX:</span><span class="stat-v" id="l2r">—</span></div><div class="stat"><span class="stat-l">TX:</span><span class="stat-v" id="l2t">—</span></div></div></div></div></div></div><script>
+let historyLoaded=false;
 function fb(v){if(!v||v=="-")return"-";var n=parseFloat(v);return isNaN(n)?"-":n>=1024?(n/1024).toFixed(1)+" GB":n.toFixed(1)+" MB"}
-function gc(p){return p>=80?"high":p>=50?"medium":""}
-function createChart(id,color,maxY=100){return new Chart(document.getElementById(id),{type:"line",data:{labels:[],datasets:[{data:[],borderColor:color,backgroundColor:color.replace(")",",0.1)"),tension:0.3,fill:true,pointRadius:0,pointHitRadius:10}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},interaction:{mode:"index",intersect:false},scales:{x:{display:true,grid:{display:false},ticks:{maxRotation:45,minRotation:45,autoSkip:true,maxTicksLimit:8,callback:function(val,idx){const lbl=this.getLabelForValue(val);return lbl.split(" ")[1]||lbl}}},y:{beginAtZero:true,max:maxY,grid:{color:"rgba(0,0,0,0.05)"}}},plugins:{legend:{display:false},tooltip:{enabled:true,mode:"index",callbacks:{label:function(ctx){return ctx.dataset.label||"Value: "+ctx.parsed.y}}}}}})}
-function initCharts(){
-    cpuChart=createChart("cpuChart","#667eea");
-    tempChart=createChart("tempChart","#f5576c",100);
-    ramChart=createChart("ramChart","#667eea");
-    diskChart=createChart("diskChart","#667eea");
-    diskChart.data.datasets.push({data:[],borderColor:"#f5576c",backgroundColor:"rgba(245,87,108,0.1)",tension:0.3,fill:true,pointRadius:0,pointHitRadius:10});
+function gc(p){return p>=80?"#f5576c":p>=50?"#4facfe":"#667eea"}
+
+function createPlotlyChart(divId,color,title,yMax=100){
+    const layout={
+        margin:{t:20,r:20,b:40,l:50},
+        paper_bgcolor:"rgba(0,0,0,0)",
+        plot_bgcolor:"rgba(0,0,0,0)",
+        xaxis:{
+            type:"date",
+            tickformat:"%H:%M:%S",
+            gridcolor:"rgba(0,0,0,0.1)",
+            showgrid:true,
+            nticks:8
+        },
+        yaxis:{
+            range:[0,yMax],
+            gridcolor:"rgba(0,0,0,0.1)",
+            showgrid:true
+        },
+        showlegend:false
+    };
+    const config={responsive:true,displayModeBar:false};
+    Plotly.newPlot(divId,[{
+        x:[],
+        y:[],
+        type:"scatter",
+        mode:"lines",
+        line:{color:color,width:2},
+        fill:"tozeroy",
+        fillcolor:color.replace(")",",0.2)").replace("#","rgba(").split(",").map((v,i)=>i===3?parseFloat(v):v).join(",")
+    }],layout,config);
 }
+
+function initCharts(){
+    createPlotlyChart("cpuChart","#667eea","CPU Load",100);
+    createPlotlyChart("tempChart","#f5576c","Temperature",100);
+    createPlotlyChart("ramChart","#667eea","RAM Usage",100);
+    
+    const diskLayout={
+        margin:{t:20,r:20,b:40,l:50},
+        paper_bgcolor:"rgba(0,0,0,0)",
+        plot_bgcolor:"rgba(0,0,0,0)",
+        xaxis:{type:"date",tickformat:"%H:%M:%S",gridcolor:"rgba(0,0,0,0.1)",showgrid:true,nticks:8},
+        yaxis:{range:[0,100],gridcolor:"rgba(0,0,0,0.1)",showgrid:true},
+        showlegend:true
+    };
+    Plotly.newPlot("diskChart",[
+        {x:[],y:[],type:"scatter",mode:"lines",line:{color:"#667eea",width:2},fill:"tozeroy",name:"Система"},
+        {x:[],y:[],type:"scatter",mode:"lines",line:{color:"#f5576c",width:2},fill:"tozeroy",name:"Внешний"}
+    ],diskLayout,{responsive:true,displayModeBar:false});
+}
+
 async function loadHistory(){
     if(historyLoaded)return;
     try{
         const r=await fetch("/mon/history");
         const d=await r.json();
         if(d.labels&&d.labels.length>1){
-            cpuChart.data.labels=[...d.labels];cpuChart.data.datasets[0].data=[...d.cpu];
-            tempChart.data.labels=[...d.labels];tempChart.data.datasets[0].data=[...d.temp];
-            ramChart.data.labels=[...d.labels];ramChart.data.datasets[0].data=[...d.ram];
-            diskChart.data.labels=[...d.labels];diskChart.data.datasets[0].data=[...d.disk_sys];diskChart.data.datasets[1].data=[...d.disk_ext];
-            cpuChart.update();tempChart.update();ramChart.update();diskChart.update();
+            const times=d.labels.map(ts=>new Date(ts.split(".").reverse().join("-")+" "+ts.split(" ")[1]));
+            
+            Plotly.extendTraces("cpuChart",{x:[[...times]],y:[[...d.cpu]]},[0],60);
+            Plotly.extendTraces("tempChart",{x:[[...times]],y:[[...d.temp]]},[0],60);
+            Plotly.extendTraces("ramChart",{x:[[...times]],y:[[...d.ram]]},[0],60);
+            Plotly.extendTraces("diskChart",{x:[[...times],[...times]],y:[[...d.disk_sys],[...d.disk_ext]]},[0,1],60);
+            
             historyLoaded=true;
             console.log("✅ History loaded:",d.labels.length,"points");
         }
     }catch(e){console.log("History error:",e)}
 }
+
 function updateCharts(data){
-    const ts=data.timestamp;
-    [cpuChart,tempChart,ramChart].forEach(ch=>{if(ch.data.labels.length>60){ch.data.labels.shift();ch.data.datasets[0].data.shift()}});
-    if(diskChart.data.labels.length>60){diskChart.data.labels.shift();diskChart.data.datasets[0].data.shift();diskChart.data.datasets[1].data.shift()}
-    cpuChart.data.labels.push(ts);cpuChart.data.datasets[0].data.push(data.cpu.usage);cpuChart.update("none");
-    tempChart.data.labels.push(ts);tempChart.data.datasets[0].data.push(data.cpu.temp);tempChart.update("none");
-    ramChart.data.labels.push(ts);ramChart.data.datasets[0].data.push(data.ram.usage);ramChart.update("none");
-    diskChart.data.labels.push(ts);diskChart.data.datasets[0].data.push(data.disk.system.percent);diskChart.data.datasets[1].data.push(data.disk.external.mounted?data.disk.external.percent:0);diskChart.update("none");
+    const now=new Date();
+    if(historyLoaded){
+        Plotly.extendTraces("cpuChart",{x:[[now]],y:[[data.cpu.usage]]},[0],60);
+        Plotly.extendTraces("tempChart",{x:[[now]],y:[[data.cpu.temp]]},[0],60);
+        Plotly.extendTraces("ramChart",{x:[[now]],y:[[data.ram.usage]]},[0],60);
+        Plotly.extendTraces("diskChart",{x:[[now],[now]],y:[[data.disk.system.percent],[data.disk.external.mounted?data.disk.external.percent:0]]},[0,1],60);
+    }
 }
+
 async function load(){
     try{
         const r=await fetch("/mon/data"),d=await r.json();
@@ -184,20 +231,22 @@ async function load(){
         document.getElementById("up").textContent=d.system.uptime;
         document.getElementById("wan").textContent=d.network.wan_ip;
         const cu=d.cpu.usage;document.getElementById("cu").textContent=cu+"%";
-        document.getElementById("cb").style.width=cu+"%";document.getElementById("cb").className="progress-bar "+gc(cu);
+        document.getElementById("cb").style.width=cu+"%";document.getElementById("cb").style.background=gc(cu);
         document.getElementById("ct").textContent=d.cpu.temp+"°C";
         const ru=d.ram.usage;document.getElementById("ru").textContent=ru+"%";
-        document.getElementById("rb").style.width=ru+"%";document.getElementById("rb").className="progress-bar "+gc(ru);
+        document.getElementById("rb").style.width=ru+"%";document.getElementById("rb").style.background=gc(ru);
         document.getElementById("rd").textContent=d.ram.used_gb+"GB / "+d.ram.total_gb+"GB";
-        if(d.disk.system){const s=d.disk.system;document.getElementById("ds").textContent=s.percent+"%";document.getElementById("db").style.width=s.percent+"%";document.getElementById("db").className="progress-bar "+gc(s.percent);document.getElementById("dd").textContent=s.used_gb+"GB / "+s.total_gb+"GB"}
-        if(d.disk.external&&d.disk.external.mounted){const e=d.disk.external;document.getElementById("de").textContent=e.percent+"%";document.getElementById("deb").style.width=e.percent+"%";document.getElementById("deb").className="progress-bar "+gc(e.percent);document.getElementById("ded").textContent=e.used+" / "+e.total+" ("+e.free+" free)"}
+        if(d.disk.system){const s=d.disk.system;document.getElementById("ds").textContent=s.percent+"%";document.getElementById("db").style.width=s.percent+"%";document.getElementById("db").style.background=gc(s.percent);document.getElementById("dd").textContent=s.used_gb+"GB / "+s.total_gb+"GB"}
+        if(d.disk.external&&d.disk.external.mounted){const e=d.disk.external;document.getElementById("de").textContent=e.percent+"%";document.getElementById("deb").style.width=e.percent+"%";document.getElementById("deb").style.background=gc(e.percent);document.getElementById("ded").textContent=e.used+" / "+e.total+" ("+e.free+" free)"}
         else{document.getElementById("de").textContent="—";document.getElementById("deb").style.width="0%";document.getElementById("ded").textContent="Не смонтирован"}
         if(d.network.lan1){document.getElementById("l1i").textContent=d.network.lan1.ip;document.getElementById("l1r").textContent=fb(d.network.lan1.rx_mb);document.getElementById("l1t").textContent=fb(d.network.lan1.tx_mb)}
         if(d.network.lan2){document.getElementById("l2i").textContent=d.network.lan2.ip;document.getElementById("l2r").textContent=fb(d.network.lan2.rx_mb);document.getElementById("l2t").textContent=fb(d.network.lan2.tx_mb)}
         if(historyLoaded)updateCharts(d);
     }catch(e){console.error(e)}
 }
-initCharts();loadHistory().then(()=>{load();setInterval(load,10000)});
+
+initCharts();
+loadHistory().then(()=>{load();setInterval(load,10000)});
 </script></body></html>""")
 
 load_history()
