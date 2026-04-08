@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  monitoring:
+    build: ./backend
+    container_name: monitoring-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./logs:/app/logs
+      - /media/hs/HDD:/media/hs/HDD:ro
+      - /sys/class/thermal:/sys/class/thermal:ro
+      - /sys/class/net:/sys/class/net:ro
+      - /proc:/proc:ro
+    environment:
+      - TZ=Europe/Moscow
+      - EXTERNAL_DISK_PATH=/media/hs/HDD
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+    read_only: false
+    tmpfs:
+      - /tmp
